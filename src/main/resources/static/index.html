@@ -275,6 +275,51 @@
             color: #2196f3;
         }
 
+        .run-all-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .run-all-button {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(17, 153, 142, 0.3);
+        }
+
+        .run-all-button:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(17, 153, 142, 0.4);
+        }
+
+        .run-all-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: #ccc;
+        }
+
+        .run-all-progress {
+            margin-top: 15px;
+            font-size: 16px;
+            color: #666;
+            min-height: 24px;
+        }
+
+        .progress-text {
+            font-weight: 600;
+            color: #11998e;
+        }
+
         @media (max-width: 768px) {
             .test-grid {
                 grid-template-columns: 1fr;
@@ -295,6 +340,14 @@
     <div class="header">
         <h1>🚀 Restful Booker API Testing Dashboard</h1>
         <p>Run individual tests and see results in real-time</p>
+    </div>
+
+    <!-- Run All Tests Section -->
+    <div class="run-all-section">
+        <button class="run-all-button" onclick="runAllTests(this)">
+            ▶️ Run All Tests
+        </button>
+        <div class="run-all-progress" id="run-all-progress"></div>
     </div>
 
     <div class="test-grid">
@@ -478,7 +531,7 @@
             </div>
             <div class="result-details">
                 <p><strong>Message:</strong> ${errorMessage}</p>
-                <p>Make sure your Spring Boot application is running</p>
+                <p>Make sure your Spring Boot application is running on port 8080</p>
             </div>
         `;
     }
@@ -516,6 +569,87 @@
             'non-existent': 'Run 404 Test'
         };
         return buttonTexts[testName] || 'Run Test';
+    }
+
+    async function runAllTests(button) {
+        console.log('Run All Tests clicked');
+
+        // Reset statistics
+        stats = { total: 0, passed: 0, failed: 0 };
+        document.getElementById('total-tests').textContent = '0';
+        document.getElementById('passed-tests').textContent = '0';
+        document.getElementById('failed-tests').textContent = '0';
+
+        // Clear all previous results
+        document.querySelectorAll('.result-container').forEach(container => {
+            container.classList.remove('show');
+        });
+
+        // Disable the run all button
+        button.disabled = true;
+        button.textContent = '⏳ Running Tests...';
+
+        const progressDiv = document.getElementById('run-all-progress');
+        console.log('Progress div found:', progressDiv);
+
+        // List of all tests in order
+        const allTests = [
+            { name: 'health', display: 'Health Check' },
+            { name: 'create-booking', display: 'Create Booking' },
+            { name: 'get-booking', display: 'Get Booking' },
+            { name: 'get-all-bookings', display: 'Get All Bookings' },
+            { name: 'get-bookings-by-name', display: 'Filter by Name' },
+            { name: 'update-booking', display: 'Update Booking' },
+            { name: 'partial-update', display: 'Partial Update' },
+            { name: 'delete-booking', display: 'Delete Booking' },
+            { name: 'invalid-data', display: 'Invalid Data Test' },
+            { name: 'non-existent', display: 'Non-Existent Test' }
+        ];
+
+        // Run tests sequentially
+        for (let i = 0; i < allTests.length; i++) {
+            const test = allTests[i];
+            progressDiv.innerHTML = `<span class="progress-text">Running ${i + 1}/${allTests.length}: ${test.display}...</span>`;
+
+            // Find the button for this test
+            const testButton = document.querySelector(`button[onclick*="${test.name}"]`);
+
+            // Run the test
+            await runTestSilently(test.name);
+
+            // Small delay between tests for better visibility
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+
+        // Re-enable button and show completion
+        button.disabled = false;
+        button.textContent = '▶️ Run All Tests';
+        progressDiv.innerHTML = `<span class="progress-text">✅ All tests completed! Total: ${stats.total}, Passed: ${stats.passed}, Failed: ${stats.failed}</span>`;
+
+        // Clear the completion message after 5 seconds
+        setTimeout(() => {
+            progressDiv.innerHTML = '';
+        }, 5000);
+    }
+
+    async function runTestSilently(testName) {
+        const resultContainer = document.getElementById(`result-${testName}`);
+        resultContainer.classList.remove('show');
+
+        try {
+            const response = await fetch(`${API_BASE}/api/tests/${testName}`);
+            const result = await response.json();
+
+            // Display result
+            displayResult(testName, result);
+
+            // Update statistics
+            updateStats(result.status);
+
+        } catch (error) {
+            displayError(testName, error.message);
+            updateStats('ERROR');
+        }
     }
 </script>
 </body>
