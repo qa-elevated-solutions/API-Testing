@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restful Booker API Testing Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .test-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .test-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+
+        .test-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .test-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .icon-create { background: #e3f2fd; }
+        .icon-read { background: #f3e5f5; }
+        .icon-update { background: #fff3e0; }
+        .icon-delete { background: #ffebee; }
+        .icon-health { background: #e8f5e9; }
+
+        .test-button {
+            width: 100%;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .test-button:hover:not(:disabled) {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .test-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .test-button.loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .result-container {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-container.show {
+            display: block;
+        }
+
+        .result-passed {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            color: #2e7d32;
+        }
+
+        .result-failed {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            color: #c62828;
+        }
+
+        .result-error {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            color: #e65100;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-passed {
+            background: #4caf50;
+            color: white;
+        }
+
+        .badge-failed {
+            background: #f44336;
+            color: white;
+        }
+
+        .badge-error {
+            background: #ff9800;
+            color: white;
+        }
+
+        .result-details {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .result-details p {
+            margin: 5px 0;
+        }
+
+        .result-details strong {
+            font-weight: 600;
+        }
+
+        .response-body {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 150px;
+            overflow-y: auto;
+            word-break: break-all;
+        }
+
+        .stats {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stats h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .stat-item {
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .stat-item h3 {
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        .stat-item p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .stat-passed {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+
+        .stat-failed {
+            background: #ffebee;
+            color: #f44336;
+        }
+
+        .stat-total {
+            background: #e3f2fd;
+            color: #2196f3;
+        }
+
+        @media (max-width: 768px) {
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🚀 Restful Booker API Testing Dashboard</h1>
+        <p>Run individual tests and see results in real-time</p>
+    </div>
+
+    <div class="test-grid">
+        <!-- Health Check -->
+        <div class="test-card">
+            <h3><span class="test-icon icon-health">🏥</span> Health Check</h3>
+            <button class="test-button" onclick="runTest('health', this)">Run Health Check</button>
+            <div class="result-container" id="result-health"></div>
+        </div>
+
+        <!-- Create Booking -->
+        <div class="test-card">
+            <h3><span class="test-icon icon-create">➕</span> Create Booking</h3>
+            <button class="test-button" onclick="runTest('create-booking', this)">Run Create Test</button>
+            <div class="result-container" id="result-create-booking"></div>
+        </div>
+
+        <!-- Get Booking -->
+        <div class="test-card">
+            <h3><span class="test-icon icon-read">🔍</span> Get Booking by ID</h3>
+            <button class="test-button" onclick="runTest('get-booking', this)">Run Get Test</button>
+            <div class="result-container" id="result-get-booking"></div>
+        </div>
+
+        <!-- Get All Bookings -->
+        <div class="test-card">
+            <h3><span class="test-icon icon-read">📋</span> Get All Bookings</h3>
+            <button class="test-button" onclick="runTest('get-all-bookings', this)">Run Get All Test</button>
+            <div class="result-container" id="result-get-all-bookings"></div>
+        </div>
+
+        <!-- Get Bookings by Name -->
+        <div class="test-card">
+            <h3><span class="test-icon icon-read">🔎</span> Filter by Name</h3>
+            <button class="test-button" onclick="runTest('get-bookings-by-name', this)">Run Filter Test</button>
+            <div class="result-container" id="result-get-bookings-by-name"></div>
+        </div>
+
+        <!-- Update Booking -->
+        <div class="test-card">
+            <h3><span class="test-icon icon-update">✏️</span> Update Booking (PUT)</h3>
+            <button class="test-button" onclick="runTest('update-booking', this)">Run Update Test</button>
+            <div class="result-container" id="result-update-booking"></div>
+        </div>
+
+        <!-- Partial Update -->
+        <div class="test-card">
+            <h3><span class="test-icon icon-update">📝</span> Partial Update (PATCH)</h3>
+            <button class="test-button" onclick="runTest('partial-update', this)">Run Patch Test</button>
+            <div class="result-container" id="result-partial-update"></div>
+        </div>
+
+        <!-- Delete Booking -->
+        <div class="test-card">
+            <h3><span class="test-icon icon-delete">🗑️</span> Delete Booking</h3>
+            <button class="test-button" onclick="runTest('delete-booking', this)">Run Delete Test</button>
+            <div class="result-container" id="result-delete-booking"></div>
+        </div>
+
+        <!-- Invalid Data -->
+        <div class="test-card">
+            <h3><span class="test-icon icon-delete">❌</span> Invalid Data Test</h3>
+            <button class="test-button" onclick="runTest('invalid-data', this)">Run Invalid Test</button>
+            <div class="result-container" id="result-invalid-data"></div>
+        </div>
+
+        <!-- Non-Existent Booking -->
+        <div class="test-card">
+            <h3><span class="test-icon icon-delete">🚫</span> Non-Existent Test</h3>
+            <button class="test-button" onclick="runTest('non-existent', this)">Run 404 Test</button>
+            <div class="result-container" id="result-non-existent"></div>
+        </div>
+    </div>
+
+    <div class="stats">
+        <h2>Test Statistics</h2>
+        <div class="stats-grid">
+            <div class="stat-item stat-total">
+                <h3 id="total-tests">0</h3>
+                <p>Total Tests Run</p>
+            </div>
+            <div class="stat-item stat-passed">
+                <h3 id="passed-tests">0</h3>
+                <p>Passed</p>
+            </div>
+            <div class="stat-item stat-failed">
+                <h3 id="failed-tests">0</h3>
+                <p>Failed/Error</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let stats = { total: 0, passed: 0, failed: 0 };
+
+    // Automatically detect the port from current URL
+    const API_BASE = window.location.origin;
+
+    // Test if API is accessible on page load
+    window.addEventListener('DOMContentLoaded', async () => {
+        console.log('Page loaded successfully!');
+        console.log('API Base URL:', API_BASE);
+        try {
+            const response = await fetch(`${API_BASE}/api/tests/health`);
+            console.log('API connection test:', response.status);
+        } catch (error) {
+            console.error('API connection failed:', error);
+            alert('Warning: Cannot connect to API backend. Make sure Spring Boot is running.');
+        }
+    });
+
+    async function runTest(testName, button) {
+        // Disable button and show loading
+        button.disabled = true;
+        button.classList.add('loading');
+        button.textContent = '';
+
+        const resultContainer = document.getElementById(`result-${testName}`);
+        resultContainer.classList.remove('show');
+
+        try {
+            console.log(`Running test: ${testName}`);
+            const response = await fetch(`${API_BASE}/api/tests/${testName}`);
+            console.log(`Response status: ${response.status}`);
+            const result = await response.json();
+            console.log('Result:', result);
+
+            // Display result
+            displayResult(testName, result);
+
+            // Update statistics
+            updateStats(result.status);
+
+        } catch (error) {
+            displayError(testName, error.message);
+            updateStats('ERROR');
+        } finally {
+            // Re-enable button
+            button.disabled = false;
+            button.classList.remove('loading');
+            button.textContent = getButtonText(testName);
+        }
+    }
+
+    function displayResult(testName, result) {
+        const container = document.getElementById(`result-${testName}`);
+        const statusClass = result.status === 'PASSED' ? 'result-passed' :
+                           result.status === 'FAILED' ? 'result-failed' : 'result-error';
+        const badgeClass = result.status === 'PASSED' ? 'badge-passed' :
+                          result.status === 'FAILED' ? 'badge-failed' : 'badge-error';
+
+        let html = `
+            <div class="result-header">
+                <span>${result.testName}</span>
+                <span class="status-badge ${badgeClass}">${result.status}</span>
+            </div>
+            <div class="result-details">
+                <p><strong>Message:</strong> ${result.message}</p>
+                <p><strong>Status Code:</strong> ${result.statusCode}</p>
+                <p><strong>Duration:</strong> ${result.duration}ms</p>
+        `;
+
+        if (result.responseBody && result.responseBody.length < 500) {
+            html += `<div class="response-body">${escapeHtml(result.responseBody)}</div>`;
+        }
+
+        html += `</div>`;
+
+        container.className = `result-container show ${statusClass}`;
+        container.innerHTML = html;
+    }
+
+    function displayError(testName, errorMessage) {
+        const container = document.getElementById(`result-${testName}`);
+        container.className = 'result-container show result-error';
+        container.innerHTML = `
+            <div class="result-header">
+                <span>Error</span>
+                <span class="status-badge badge-error">ERROR</span>
+            </div>
+            <div class="result-details">
+                <p><strong>Message:</strong> ${errorMessage}</p>
+                <p>Make sure your Spring Boot application is running</p>
+            </div>
+        `;
+    }
+
+    function updateStats(status) {
+        stats.total++;
+        if (status === 'PASSED') {
+            stats.passed++;
+        } else {
+            stats.failed++;
+        }
+
+        document.getElementById('total-tests').textContent = stats.total;
+        document.getElementById('passed-tests').textContent = stats.passed;
+        document.getElementById('failed-tests').textContent = stats.failed;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function getButtonText(testName) {
+        const buttonTexts = {
+            'health': 'Run Health Check',
+            'create-booking': 'Run Create Test',
+            'get-booking': 'Run Get Test',
+            'get-all-bookings': 'Run Get All Test',
+            'get-bookings-by-name': 'Run Filter Test',
+            'update-booking': 'Run Update Test',
+            'partial-update': 'Run Patch Test',
+            'delete-booking': 'Run Delete Test',
+            'invalid-data': 'Run Invalid Test',
+            'non-existent': 'Run 404 Test'
+        };
+        return buttonTexts[testName] || 'Run Test';
+    }
+</script>
+</body>
+</html>
