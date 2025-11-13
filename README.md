@@ -1,6 +1,6 @@
 # API Testing Dashboard 🚀
 
-A beautiful web-based API testing dashboard built with Spring Boot and REST Assured for testing the Restful Booker API.
+A web-based API testing dashboard built with Spring Boot and REST Assured for testing the Restful Booker API.
 
 ## Features
 - 🎨 Modern, responsive UI with gradient design
