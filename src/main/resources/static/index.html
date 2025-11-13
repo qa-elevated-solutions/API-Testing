@@ -309,15 +309,42 @@
         }
 
         .run-all-progress {
-            margin-top: 15px;
-            font-size: 16px;
+            margin-top: 20px;
+            padding: 20px;
+            font-size: 18px;
             color: #666;
-            min-height: 24px;
+            min-height: 60px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
         }
 
         .progress-text {
             font-weight: 600;
             color: #11998e;
+            font-size: 18px;
+        }
+
+        .run-again-button {
+            padding: 15px 35px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .run-again-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
         }
 
         @media (max-width: 768px) {
@@ -609,10 +636,8 @@
         // Run tests sequentially
         for (let i = 0; i < allTests.length; i++) {
             const test = allTests[i];
+            console.log(`Starting test ${i + 1}/${allTests.length}: ${test.display}`);
             progressDiv.innerHTML = `<span class="progress-text">Running ${i + 1}/${allTests.length}: ${test.display}...</span>`;
-
-            // Find the button for this test
-            const testButton = document.querySelector(`button[onclick*="${test.name}"]`);
 
             // Run the test
             await runTestSilently(test.name);
@@ -621,15 +646,33 @@
             await new Promise(resolve => setTimeout(resolve, 300));
         }
 
-        // Re-enable button and show completion
+        console.log('All tests finished, adding completion message');
+
+        // Re-enable button and show completion with Run Again button
         button.disabled = false;
         button.textContent = '▶️ Run All Tests';
-        progressDiv.innerHTML = `<span class="progress-text">✅ All tests completed! Total: ${stats.total}, Passed: ${stats.passed}, Failed: ${stats.failed}</span>`;
 
-        // Clear the completion message after 5 seconds
-        setTimeout(() => {
-            progressDiv.innerHTML = '';
-        }, 5000);
+        console.log('Creating completion elements...');
+
+        const completionMessage = document.createElement('div');
+        completionMessage.innerHTML = `
+            <span class="progress-text">✅ All tests completed! Total: ${stats.total}, Passed: ${stats.passed}, Failed: ${stats.failed}</span>
+        `;
+
+        const runAgainBtn = document.createElement('button');
+        runAgainBtn.className = 'run-again-button';
+        runAgainBtn.textContent = '🔄 Run Again';
+        runAgainBtn.onclick = function() {
+            runAllTests(button);
+        };
+
+        progressDiv.innerHTML = '';
+        progressDiv.appendChild(completionMessage);
+        progressDiv.appendChild(runAgainBtn);
+
+        console.log('Run Again button added');
+
+        // Message and button stay visible - only clears when running tests again
     }
 
     async function runTestSilently(testName) {
